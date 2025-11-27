@@ -1,6 +1,17 @@
 import { GoogleGenAI, Chat } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Lazy initialization to prevent crash on load if key is missing
+let ai: GoogleGenAI | null = null;
+
+const getAiClient = () => {
+  if (!ai) {
+    // Fallback to a dummy key to prevent crash during initialization
+    // The actual calls will fail gracefully if the key is invalid
+    const apiKey = process.env.API_KEY || "dummy_key_to_prevent_crash";
+    ai = new GoogleGenAI({ apiKey });
+  }
+  return ai;
+};
 
 const SYSTEM_INSTRUCTION = `
 You are a polite, knowledgeable Islamic Assistant for "Smart Madrasa Pro".
@@ -10,12 +21,18 @@ If asked for religious rulings (Fatwa), politely advise consulting a Mufti, but 
 `;
 
 export const startChatSession = (): Chat => {
-  return ai.chats.create({
-    model: 'gemini-2.5-flash',
-    config: {
-      systemInstruction: SYSTEM_INSTRUCTION,
-    },
-  });
+  try {
+    return getAiClient().chats.create({
+      model: 'gemini-2.5-flash',
+      config: {
+        systemInstruction: SYSTEM_INSTRUCTION,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to start chat session:", error);
+    // Return a dummy object or throw handled error
+    throw error;
+  }
 };
 
 export const generateNotice = async (topic: string, language: 'en' | 'bn'): Promise<string> => {
@@ -26,13 +43,14 @@ export const generateNotice = async (topic: string, language: 'en' | 'bn'): Prom
     Include placeholders for Date and Signature.
   `;
   try {
-    const response = await ai.models.generateContent({
+    const response = await getAiClient().models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
     });
     return response.text || "Failed to generate notice.";
   } catch (e) {
-    return "Error connecting to AI.";
+    console.error("AI Error:", e);
+    return "Error connecting to AI. Please check your internet or API Key.";
   }
 };
 
@@ -46,7 +64,7 @@ export const generateResultComment = async (studentName: string, marks: number, 
     Tone: Islamic, encouraging, constructive.
   `;
   try {
-    const response = await ai.models.generateContent({
+    const response = await getAiClient().models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
     });
@@ -76,12 +94,12 @@ export const generateQuestionPaper = async (
   `;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await getAiClient().models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
     });
     return response.text || "<p>Error generating questions.</p>";
   } catch (error) {
-    return "<p>Failed to connect to AI service.</p>";
+    return "<p>Failed to connect to AI service. Please check API Key.</p>";
   }
 };
