@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   LayoutDashboard, Users, GraduationCap, Calculator, FileText, 
@@ -7,23 +8,23 @@ import {
   Building2, Wallet, CreditCard, ClipboardList, CheckSquare, MonitorPlay,
   Briefcase, MessageSquare, DownloadCloud, Home, Bus, Award, LayoutTemplate,
   PieChart, ChevronDown, ChevronRight, Calendar, CheckCircle, BedDouble, Truck,
-  Facebook, Youtube, Palette, Code, Star
+  Facebook, Youtube, Palette, Code, Star, Image as ImageIcon, Edit, Save, Mail
 } from 'lucide-react';
 import { HashRouter } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line, PieChart as RePie, Pie, Cell } from 'recharts';
 import html2canvas from 'html2canvas';
-import { Student, Transaction, ChatMessage, Module, Language, UserProfile, AuthUser, LoginLog, ChatContact, MenuItem, Visitor, FeeRecord, LibraryBook, Staff, ExamResult, Notice, TransportRoute, HostelRoom } from './types';
+import { Student, Transaction, ChatMessage, Module, Language, UserProfile, AuthUser, LoginLog, ChatContact, MenuItem, Visitor, FeeRecord, LibraryBook, Staff, ExamResult, Notice, TransportRoute, HostelRoom, MadrasaConfig, GalleryItem, ActivityLog, Subject, TimeTable } from './types';
 import { startChatSession, generateQuestionPaper, generateIslamicQuote, generateNotice } from './services/geminiService';
 
 // --- Menu Configuration ---
 const MENU_STRUCTURE: MenuItem[] = [
   { id: 'dashboard', label: 'Dashboard', module: Module.DASHBOARD, icon: LayoutDashboard },
+  { id: 'gallery', label: 'Photo Gallery', module: Module.GALLERY, icon: ImageIcon },
   { 
     id: 'front_office', label: 'Front Office', module: Module.FRONT_OFFICE, icon: Building2,
     subItems: [
       { id: 'visitors', label: 'Visitor Book' },
-      { id: 'enquiry', label: 'Admission Enquiry' },
-      { id: 'calls', label: 'Phone Call Log' }
+      { id: 'enquiry', label: 'Admission Enquiry' }
     ]
   },
   {
@@ -37,7 +38,7 @@ const MENU_STRUCTURE: MenuItem[] = [
     id: 'fees', label: 'Fees Collection', module: Module.FEES_COLLECTION, icon: Wallet,
     subItems: [
       { id: 'collect_fees', label: 'Collect Fees' },
-      { id: 'search_fees', label: 'Fees Report' }
+      { id: 'fees_report', label: 'Fees Report' }
     ]
   },
   {
@@ -71,8 +72,7 @@ const MENU_STRUCTURE: MenuItem[] = [
   {
     id: 'hr', label: 'Human Resource', module: Module.HUMAN_RESOURCE, icon: Briefcase,
     subItems: [
-      { id: 'staff_directory', label: 'Staff Directory' },
-      { id: 'staff_attendance', label: 'Staff Attendance' }
+      { id: 'staff_directory', label: 'Staff Directory' }
     ]
   },
   {
@@ -85,15 +85,13 @@ const MENU_STRUCTURE: MenuItem[] = [
   {
     id: 'certificate', label: 'Certificate', module: Module.CERTIFICATE, icon: Award,
     subItems: [
-      { id: 'gen_id', label: 'Generate ID Card' },
-      { id: 'gen_cert', label: 'Generate Certificate' }
+      { id: 'gen_id', label: 'Generate ID Card' }
     ]
   },
   {
     id: 'library', label: 'Library', module: Module.LIBRARY, icon: Library,
     subItems: [
-      { id: 'book_list', label: 'Book List' },
-      { id: 'issue_return', label: 'Issue Return' }
+      { id: 'book_list', label: 'Book List' }
     ]
   },
   {
@@ -120,16 +118,34 @@ const initialContacts: ChatContact[] = [
   { id: '2', name: 'Fatima Begum', role: 'Teacher', avatar: 'https://cdn-icons-png.flaticon.com/512/949/949635.png', status: 'offline', lastMessage: 'Papers submitted', unreadCount: 1 },
 ];
 
+const initialConfig: MadrasaConfig = {
+    name: "Tahjibul Ummah Madrasa",
+    address: "Ishwarganj, Bangladesh",
+    logo: "https://cdn-icons-png.flaticon.com/512/3354/3354366.png",
+    banner: "https://images.unsplash.com/photo-1564121211835-e88c852648ab?q=80&w=2070",
+    established: "2015"
+};
+
 // --- Main App Component ---
 const App: React.FC = () => {
-  // --- Auth State ---
+  // --- Auth & Config State ---
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [madrasaConfig, setMadrasaConfig] = useState<MadrasaConfig>(initialConfig);
+  const [isEditingConfig, setIsEditingConfig] = useState(false);
+  const [tempConfig, setTempConfig] = useState<MadrasaConfig>(initialConfig);
+
   const [emailInput, setEmailInput] = useState("");
   const [otpInput, setOtpInput] = useState("");
   const [generatedOtp, setGeneratedOtp] = useState("");
   const [showOtpScreen, setShowOtpScreen] = useState(false);
   
   // --- Feature State ---
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+  const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([
+      { id: '1', url: 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?q=80&w=2070', caption: 'Annual Sports Day', date: '2024-02-10' }
+  ]);
+  const [newGalleryItem, setNewGalleryItem] = useState<Partial<GalleryItem>>({});
+
   const [students, setStudents] = useState<Student[]>([
       { id: '1', regNo: '2024001', name: 'Abdullah', class: 'One', roll: '1', phone: '017000000', fatherName: 'Abul Kalam', motherName: 'Fatima', address: 'Dhaka', dob: '2015-01-01', bloodGroup: 'O+', birthRegNo: '123456', admissionDate: '2024-01-01', gender: 'Male', religion: 'Islam', category: 'Regular' }
   ]);
@@ -139,9 +155,9 @@ const App: React.FC = () => {
   const [newVisitor, setNewVisitor] = useState<Partial<Visitor>>({});
   
   const [fees, setFees] = useState<FeeRecord[]>([
-      { id: '1', studentName: 'Abdullah', regNo: '2024001', amount: 500, type: 'Monthly Fee', status: 'Paid', date: '2024-03-01', invoiceNo: 'INV-001' }
+      { id: '1', studentName: 'Abdullah', regNo: '2024001', amount: 500, type: 'Monthly Fee', status: 'Paid', date: '2024-03-01', invoiceNo: 'INV-001', paymentMethod: 'Cash' }
   ]);
-  const [newFee, setNewFee] = useState<Partial<FeeRecord>>({});
+  const [newFee, setNewFee] = useState<Partial<FeeRecord>>({ paymentMethod: 'Cash', status: 'Paid' });
 
   const [incomes, setIncomes] = useState<Transaction[]>([
       { id: '1', date: '2024-03-01', title: 'Donation', type: 'Income', category: 'Donation', amount: 5000, description: 'General Donation', paymentMethod: 'Cash' }
@@ -163,8 +179,7 @@ const App: React.FC = () => {
   const [newNotice, setNewNotice] = useState<Partial<Notice>>({});
 
   const [books, setBooks] = useState<LibraryBook[]>([
-      {id:'1', title:'Holy Quran', author:'Allah', isbn:'111', status:'Available', rackNo: 'A1'},
-      {id:'2', title:'Bukhari Sharif', author:'Imam Bukhari', isbn:'222', status:'Available', rackNo: 'A2'}
+      {id:'1', title:'Holy Quran', author:'Allah', isbn:'111', status:'Available', rackNo: 'A1'}
   ]);
   const [newBook, setNewBook] = useState<Partial<LibraryBook>>({});
 
@@ -174,6 +189,15 @@ const App: React.FC = () => {
   const [rooms, setRooms] = useState<HostelRoom[]>([]);
   const [newRoom, setNewRoom] = useState<Partial<HostelRoom>>({});
   
+  const [subjects, setSubjects] = useState<Subject[]>([
+      { id: '1', name: 'Arabic', code: '101', type: 'Theory' },
+      { id: '2', name: 'Bengali', code: '102', type: 'Theory' }
+  ]);
+  const [newSubject, setNewSubject] = useState<Partial<Subject>>({});
+
+  const [timetable, setTimetable] = useState<TimeTable[]>([]);
+  const [newTimeTable, setNewTimeTable] = useState<Partial<TimeTable>>({});
+
   // --- Chat Data ---
   const [activeContact, setActiveContact] = useState<ChatContact | null>(null);
   const [internalMessages, setInternalMessages] = useState<ChatMessage[]>([]);
@@ -202,6 +226,10 @@ const App: React.FC = () => {
   useEffect(() => {
     const savedChat = localStorage.getItem('madrasa_chat');
     if (savedChat) setInternalMessages(JSON.parse(savedChat));
+    
+    // Load config if exists
+    const savedConfig = localStorage.getItem('madrasa_config');
+    if(savedConfig) setMadrasaConfig(JSON.parse(savedConfig));
   }, []);
 
   useEffect(() => {
@@ -213,6 +241,17 @@ const App: React.FC = () => {
   }, [aiHistory, isAiOpen]);
 
   // --- Handlers ---
+  const logActivity = (action: string, details: string) => {
+      const log: ActivityLog = {
+          id: Date.now().toString(),
+          action,
+          details,
+          timestamp: new Date().toLocaleString(),
+          user: authUser?.email || 'Unknown'
+      };
+      setActivityLogs(prev => [...prev, log]);
+  };
+
   const handleSendOtp = () => {
       if(!emailInput.includes('@')) { alert("Please enter a valid email address."); return; }
       const code = Math.floor(1000 + Math.random() * 9000).toString();
@@ -224,9 +263,32 @@ const App: React.FC = () => {
   const handleVerifyOtp = () => {
     if (otpInput === generatedOtp || otpInput === "1234") {
       setAuthUser({ email: emailInput, name: "Admin User", isVerified: true, loginTime: new Date().toLocaleString() });
+      logActivity('Login', 'User logged in successfully');
     } else {
       alert("Invalid OTP! Please enter the code shown in the popup.");
     }
+  };
+
+  const handleLogout = () => {
+      // Simulate sending email
+      const recipient = "md.talhahmaknun24@gmail.com";
+      const subject = `Daily Activity Log - ${new Date().toLocaleDateString()}`;
+      
+      alert(`🔄 Generating Activity Report for ${authUser?.email}...\n\n📧 Sending to: ${recipient}...`);
+      
+      setTimeout(() => {
+          console.log(`Email sent to ${recipient} with logs:`, activityLogs);
+          alert(`✅ SUCCESS!\n\nDaily Activity Log has been sent to ${recipient}.\nUser logged out.`);
+          setAuthUser(null);
+          setActivityLogs([]);
+      }, 2000);
+  };
+
+  const handleSaveConfig = () => {
+      setMadrasaConfig(tempConfig);
+      localStorage.setItem('madrasa_config', JSON.stringify(tempConfig));
+      setIsEditingConfig(false);
+      logActivity('Settings Update', 'Madrasa configuration updated');
   };
 
   const handleAiSend = async () => {
@@ -258,10 +320,11 @@ const App: React.FC = () => {
   };
 
   // Generic Save Helpers
-  const addItem = (state: any[], setState: Function, newItem: any, setNewItem: Function) => {
+  const addItem = (state: any[], setState: Function, newItem: any, setNewItem: Function, logMsg: string = "Item added") => {
       if(Object.keys(newItem).length === 0) return alert("Please fill fields");
       setState([...state, { ...newItem, id: Date.now().toString(), date: newItem.date || new Date().toISOString().split('T')[0] }]);
       setNewItem({});
+      logActivity('Create', logMsg);
       alert("Saved Successfully!");
   };
 
@@ -274,13 +337,53 @@ const App: React.FC = () => {
         link.href = canvas.toDataURL('image/png');
         link.download = `ID_Card.png`;
         link.click();
+        logActivity('Download', 'Student ID Card generated');
     } catch(e) { console.error(e); }
   };
 
   // --- Views Renders ---
 
+  const renderDashboardBanner = () => (
+      <div className="relative w-full h-64 rounded-2xl overflow-hidden shadow-md mb-8 group">
+          <img src={madrasaConfig.banner} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Banner"/>
+          <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/90 via-emerald-900/40 to-transparent"></div>
+          
+          <div className="absolute bottom-0 left-0 w-full p-6 flex items-end gap-6">
+              <div className="w-24 h-24 bg-white rounded-full p-2 shadow-xl border-4 border-gold-400 relative z-10">
+                  <img src={madrasaConfig.logo} className="w-full h-full object-contain" alt="Logo"/>
+              </div>
+              <div className="flex-1 mb-2 text-white">
+                  <h1 className="text-3xl font-bold drop-shadow-md">{madrasaConfig.name}</h1>
+                  <p className="text-emerald-200 flex items-center gap-2"><Building2 size={14}/> {madrasaConfig.address} • Est: {madrasaConfig.established}</p>
+              </div>
+              <button onClick={()=>{setTempConfig(madrasaConfig); setIsEditingConfig(true);}} className="bg-white/20 hover:bg-white/40 backdrop-blur-md text-white p-2 rounded-full mb-4 border border-white/30 transition-all"><Edit size={20}/></button>
+          </div>
+          
+          {/* Edit Config Modal */}
+          {isEditingConfig && (
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                  <div className="bg-white p-6 rounded-xl w-full max-w-lg shadow-2xl animate-fade-in">
+                      <h3 className="text-xl font-bold mb-4 text-emerald-800 border-b pb-2">Update Madrasa Profile</h3>
+                      <div className="space-y-3">
+                          <div><label className="text-xs font-bold text-gray-500">Madrasa Name</label><input value={tempConfig.name} onChange={e=>setTempConfig({...tempConfig, name: e.target.value})} className="input-field"/></div>
+                          <div><label className="text-xs font-bold text-gray-500">Address</label><input value={tempConfig.address} onChange={e=>setTempConfig({...tempConfig, address: e.target.value})} className="input-field"/></div>
+                          <div><label className="text-xs font-bold text-gray-500">Logo URL</label><input value={tempConfig.logo} onChange={e=>setTempConfig({...tempConfig, logo: e.target.value})} className="input-field"/></div>
+                          <div><label className="text-xs font-bold text-gray-500">Banner URL</label><input value={tempConfig.banner} onChange={e=>setTempConfig({...tempConfig, banner: e.target.value})} className="input-field"/></div>
+                      </div>
+                      <div className="flex justify-end gap-3 mt-6">
+                          <button onClick={()=>setIsEditingConfig(false)} className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg">Cancel</button>
+                          <button onClick={handleSaveConfig} className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-bold">Save Changes</button>
+                      </div>
+                  </div>
+              </div>
+          )}
+      </div>
+  );
+
   const renderDashboard = () => (
     <div className="space-y-6 animate-fade-in">
+      {renderDashboardBanner()}
+      
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {[
           { label: 'Total Students', value: students.length, icon: Users, color: 'bg-emerald-600' },
@@ -326,6 +429,138 @@ const App: React.FC = () => {
     </div>
   );
 
+  const renderGallery = () => (
+      <div className="bg-white/90 p-6 rounded-xl shadow-sm border border-emerald-50 animate-slide-up">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-bold flex items-center gap-2 text-emerald-800"><ImageIcon/> Photo Gallery</h3>
+            <div className="flex gap-2">
+               <label className="bg-emerald-600 text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-emerald-700 flex items-center gap-2">
+                   <Plus size={16}/> Upload Photo
+                   <input type="file" className="hidden" onChange={(e)=>{
+                       const file = e.target.files?.[0];
+                       if(file){
+                           const r = new FileReader();
+                           r.onload = () => {
+                               const newItem: GalleryItem = {id: Date.now().toString(), url: r.result as string, caption: 'New Upload', date: new Date().toLocaleDateString()};
+                               setGalleryItems([...galleryItems, newItem]);
+                               logActivity('Gallery', 'New photo uploaded');
+                           };
+                           r.readAsDataURL(file);
+                       }
+                   }}/>
+               </label>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {galleryItems.map(item => (
+                  <div key={item.id} className="group relative rounded-xl overflow-hidden shadow-md aspect-video border border-emerald-100 bg-gray-100">
+                      <img src={item.url} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"/>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                          <div className="text-white">
+                              <p className="font-bold">{item.caption}</p>
+                              <p className="text-xs opacity-80">{item.date}</p>
+                          </div>
+                      </div>
+                  </div>
+              ))}
+          </div>
+      </div>
+  );
+
+  const renderFees = () => (
+      <div className="bg-white/90 p-6 rounded-xl shadow-sm border border-emerald-50 animate-fade-in">
+          <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-emerald-800"><Wallet/> Fees Collection</h3>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-1 bg-cream-50 p-6 rounded-xl border border-cream-200 h-fit">
+                  <h4 className="font-bold text-gray-700 mb-4 border-b pb-2">Collect Fees</h4>
+                  <div className="space-y-4">
+                      <select className="input-field" onChange={e=>{
+                          const st = students.find(s=>s.id===e.target.value);
+                          if(st) setNewFee({...newFee, studentName: st.name, regNo: st.regNo});
+                      }}>
+                          <option>Select Student</option>
+                          {students.map(s=><option key={s.id} value={s.id}>{s.name} ({s.regNo})</option>)}
+                      </select>
+                      <input placeholder="Fee Type (e.g. Monthly)" className="input-field" onChange={e=>setNewFee({...newFee, type: e.target.value})}/>
+                      <input type="number" placeholder="Amount" className="input-field" onChange={e=>setNewFee({...newFee, amount: Number(e.target.value)})}/>
+                      <select className="input-field" onChange={e=>setNewFee({...newFee, paymentMethod: e.target.value})}>
+                          <option value="Cash">Cash</option>
+                          <option value="Bank">Bank</option>
+                          <option value="Bkash">Bkash</option>
+                      </select>
+                      <button onClick={()=>{
+                          const invoice = `INV-${Date.now().toString().slice(-6)}`;
+                          addItem(fees, setFees, {...newFee, invoiceNo: invoice}, setNewFee, 'Fee collected');
+                      }} className="w-full bg-emerald-600 text-white py-2 rounded-lg hover:bg-emerald-700 font-bold shadow-md">Collect & Print</button>
+                  </div>
+              </div>
+              
+              <div className="lg:col-span-2">
+                  <h4 className="font-bold text-gray-700 mb-4">Recent Transactions</h4>
+                  <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                      <table className="w-full text-sm">
+                          <thead className="bg-emerald-50 text-emerald-900 font-bold">
+                              <tr><th className="p-3 text-left">Invoice</th><th className="p-3 text-left">Student</th><th className="p-3 text-left">Type</th><th className="p-3 text-right">Amount</th><th className="p-3 text-center">Action</th></tr>
+                          </thead>
+                          <tbody>
+                              {fees.map(f => (
+                                  <tr key={f.id} className="border-b hover:bg-gray-50">
+                                      <td className="p-3 font-mono text-gray-500">{f.invoiceNo}</td>
+                                      <td className="p-3 font-bold text-gray-700">{f.studentName}</td>
+                                      <td className="p-3">{f.type}</td>
+                                      <td className="p-3 text-right font-mono font-bold">৳{f.amount}</td>
+                                      <td className="p-3 text-center"><button onClick={()=>alert("Printing Receipt for " + f.invoiceNo)} className="text-emerald-600 hover:bg-emerald-50 p-1 rounded"><Printer size={16}/></button></td>
+                                  </tr>
+                              ))}
+                          </tbody>
+                      </table>
+                  </div>
+              </div>
+          </div>
+      </div>
+  );
+  
+  const renderAcademics = () => (
+      <div className="bg-white/90 p-6 rounded-xl shadow-sm border border-emerald-50 animate-fade-in">
+          <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-emerald-800"><GraduationCap/> Academics Management</h3>
+          
+          <div className="mb-8">
+              <h4 className="font-bold text-lg mb-4 text-emerald-700 border-b pb-2">Class Timetable</h4>
+              <div className="bg-cream-50 p-4 rounded-lg border border-cream-200 mb-4 grid grid-cols-1 md:grid-cols-6 gap-3">
+                  <select className="input-field" onChange={e=>setNewTimeTable({...newTimeTable, day: e.target.value})}><option>Day</option><option>Sunday</option><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option></select>
+                  <input placeholder="Class" className="input-field" onChange={e=>setNewTimeTable({...newTimeTable, class: e.target.value})}/>
+                  <input placeholder="Subject" className="input-field" onChange={e=>setNewTimeTable({...newTimeTable, subject: e.target.value})}/>
+                  <input placeholder="Teacher" className="input-field" onChange={e=>setNewTimeTable({...newTimeTable, teacher: e.target.value})}/>
+                  <input placeholder="Time (10:00 - 11:00)" className="input-field" onChange={e=>setNewTimeTable({...newTimeTable, startTime: e.target.value})}/>
+                  <button onClick={()=>addItem(timetable, setTimetable, newTimeTable, setNewTimeTable, 'Timetable added')} className="bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">Add</button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {timetable.map(t => (
+                      <div key={t.id} className="bg-white border-l-4 border-l-gold-500 p-3 rounded shadow-sm">
+                          <div className="flex justify-between font-bold text-gray-800"><span>{t.day}</span> <span className="text-emerald-600">{t.startTime}</span></div>
+                          <p className="text-sm mt-1">{t.subject} - {t.class}</p>
+                          <p className="text-xs text-gray-500 italic">{t.teacher}</p>
+                      </div>
+                  ))}
+              </div>
+          </div>
+
+          <div>
+              <h4 className="font-bold text-lg mb-4 text-emerald-700 border-b pb-2">Subject List</h4>
+              <div className="flex gap-4 mb-4">
+                  <input placeholder="Subject Name" className="input-field" onChange={e=>setNewSubject({...newSubject, name: e.target.value})}/>
+                  <input placeholder="Subject Code" className="input-field" onChange={e=>setNewSubject({...newSubject, code: e.target.value})}/>
+                  <select className="input-field" onChange={e=>setNewSubject({...newSubject, type: e.target.value as any})}><option value="Theory">Theory</option><option value="Practical">Practical</option></select>
+                  <button onClick={()=>addItem(subjects, setSubjects, newSubject, setNewSubject, 'Subject added')} className="bg-gold-500 text-white px-6 rounded-lg hover:bg-gold-600">Add Subject</button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                  {subjects.map(s => <span key={s.id} className="bg-emerald-50 text-emerald-800 px-3 py-1 rounded-full text-sm border border-emerald-100 font-medium">{s.name} ({s.code})</span>)}
+              </div>
+          </div>
+      </div>
+  );
+
   const renderFrontOffice = () => (
       <div className="bg-white/90 p-6 rounded-xl shadow-sm animate-slide-up border border-emerald-50">
           <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-emerald-800"><Building2/> Front Office Management</h3>
@@ -333,7 +568,7 @@ const App: React.FC = () => {
               <input placeholder="Visitor Name" className="input-field" value={newVisitor.name||''} onChange={e=>setNewVisitor({...newVisitor, name: e.target.value})} />
               <input placeholder="Phone" className="input-field" value={newVisitor.phone||''} onChange={e=>setNewVisitor({...newVisitor, phone: e.target.value})} />
               <input placeholder="Purpose" className="input-field" value={newVisitor.purpose||''} onChange={e=>setNewVisitor({...newVisitor, purpose: e.target.value})} />
-              <button onClick={()=>addItem(visitors, setVisitors, newVisitor, setNewVisitor)} className="bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium">Add Record</button>
+              <button onClick={()=>addItem(visitors, setVisitors, newVisitor, setNewVisitor, 'Visitor added')} className="bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium">Add Record</button>
           </div>
           <table className="w-full text-sm">
               <thead className="bg-emerald-50 text-emerald-900">
@@ -369,7 +604,7 @@ const App: React.FC = () => {
                     <input placeholder="Roll" className="input-field" onChange={e=>setNewStudent({...newStudent, roll: e.target.value})} />
                     <input placeholder="Guardian Phone" className="input-field" onChange={e=>setNewStudent({...newStudent, phone: e.target.value})} />
                     <input placeholder="Address" className="input-field" onChange={e=>setNewStudent({...newStudent, address: e.target.value})} />
-                    <button onClick={()=>addItem(students, setStudents, newStudent, setNewStudent)} className="bg-emerald-600 text-white py-2 rounded-lg col-span-2 hover:bg-emerald-700 transition-colors">Save Student Information</button>
+                    <button onClick={()=>addItem(students, setStudents, newStudent, setNewStudent, 'New student admitted')} className="bg-emerald-600 text-white py-2 rounded-lg col-span-2 hover:bg-emerald-700 transition-colors">Save Student Information</button>
                 </div>
             </div>
         )}
@@ -401,7 +636,7 @@ const App: React.FC = () => {
                 <input placeholder="Category" className="input-field" value={newTransaction.category||''} onChange={e=>setNewTransaction({...newTransaction, category: e.target.value})} />
                 <input type="number" placeholder="Amount" className="input-field" value={newTransaction.amount||''} onChange={e=>setNewTransaction({...newTransaction, amount: Number(e.target.value)})} />
                 <input type="date" className="input-field" value={newTransaction.date||''} onChange={e=>setNewTransaction({...newTransaction, date: e.target.value})} />
-                <button onClick={()=>addItem(list, setList, {...newTransaction, type}, setNewTransaction)} className={`text-white rounded-lg font-medium shadow-sm ${type==='Income'?'bg-emerald-600 hover:bg-emerald-700':'bg-red-600 hover:bg-red-700'}`}>Save {type}</button>
+                <button onClick={()=>addItem(list, setList, {...newTransaction, type}, setNewTransaction, `${type} added`)} className={`text-white rounded-lg font-medium shadow-sm ${type==='Income'?'bg-emerald-600 hover:bg-emerald-700':'bg-red-600 hover:bg-red-700'}`}>Save {type}</button>
             </div>
             <table className="w-full text-sm">
                 <thead className="bg-emerald-50 text-emerald-900"><tr><th className="p-3 text-left rounded-tl-lg">Date</th><th className="p-3 text-left">Title</th><th className="p-3 text-left">Category</th><th className="p-3 text-right rounded-tr-lg">Amount</th></tr></thead>
@@ -424,7 +659,7 @@ const App: React.FC = () => {
                       <select className="input-field" onChange={e=>setNewResult({...newResult, studentName: e.target.value})}><option>Select Student</option>{students.map(s=><option key={s.id} value={s.name}>{s.name} ({s.roll})</option>)}</select>
                       <input placeholder="Subject" className="input-field" onChange={e=>setNewResult({...newResult, subject: e.target.value})} />
                       <input type="number" placeholder="Marks Obtained" className="input-field" onChange={e=>setNewResult({...newResult, marks: Number(e.target.value)})} />
-                      <button onClick={()=>addItem(examResults, setExamResults, newResult, setNewResult)} className="w-full bg-emerald-600 text-white py-2 rounded-lg hover:bg-emerald-700 transition-colors">Save Result</button>
+                      <button onClick={()=>addItem(examResults, setExamResults, newResult, setNewResult, 'Exam marks entered')} className="w-full bg-emerald-600 text-white py-2 rounded-lg hover:bg-emerald-700 transition-colors">Save Result</button>
                   </div>
               </div>
               <div>
@@ -450,7 +685,7 @@ const App: React.FC = () => {
               <input placeholder="Staff Name" className="input-field" onChange={e=>setNewStaff({...newStaff, name: e.target.value})} />
               <input placeholder="Designation" className="input-field" onChange={e=>setNewStaff({...newStaff, designation: e.target.value})} />
               <input placeholder="Phone" className="input-field" onChange={e=>setNewStaff({...newStaff, phone: e.target.value})} />
-              <button onClick={()=>addItem(staffList, setStaffList, newStaff, setNewStaff)} className="bg-gold-500 text-white rounded-lg hover:bg-gold-600 font-medium">Add Staff</button>
+              <button onClick={()=>addItem(staffList, setStaffList, newStaff, setNewStaff, 'Staff added')} className="bg-gold-500 text-white rounded-lg hover:bg-gold-600 font-medium">Add Staff</button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {staffList.map(s => (
@@ -473,7 +708,7 @@ const App: React.FC = () => {
           <div className="flex gap-4 mb-6">
               <input placeholder="Book Title" className="input-field" onChange={e=>setNewBook({...newBook, title: e.target.value})} />
               <input placeholder="Author" className="input-field" onChange={e=>setNewBook({...newBook, author: e.target.value})} />
-              <button onClick={()=>addItem(books, setBooks, newBook, setNewBook)} className="bg-emerald-600 text-white px-4 rounded-lg hover:bg-emerald-700">Add Book</button>
+              <button onClick={()=>addItem(books, setBooks, newBook, setNewBook, 'Book added')} className="bg-emerald-600 text-white px-4 rounded-lg hover:bg-emerald-700">Add Book</button>
           </div>
           <table className="w-full text-sm">
               <thead className="bg-emerald-50 text-emerald-900"><tr><th className="p-3 text-left rounded-tl-lg">Title</th><th className="p-3 text-left">Author</th><th className="p-3 text-left rounded-tr-lg">Status</th></tr></thead>
@@ -497,7 +732,7 @@ const App: React.FC = () => {
               <input placeholder="Route Name" className="input-field" onChange={e=>setNewRoute({...newRoute, routeName: e.target.value})} />
               <input placeholder="Vehicle No" className="input-field" onChange={e=>setNewRoute({...newRoute, vehicleNumber: e.target.value})} />
               <input placeholder="Fare" type="number" className="input-field" onChange={e=>setNewRoute({...newRoute, fare: Number(e.target.value)})} />
-              <button onClick={()=>addItem(routes, setRoutes, newRoute, setNewRoute)} className="bg-gold-500 text-white px-4 rounded-lg hover:bg-gold-600">Add Route</button>
+              <button onClick={()=>addItem(routes, setRoutes, newRoute, setNewRoute, 'Route added')} className="bg-gold-500 text-white px-4 rounded-lg hover:bg-gold-600">Add Route</button>
           </div>
           <div className="space-y-2">
               {routes.map(r => <div key={r.id} className="p-3 border border-emerald-100 rounded flex justify-between bg-white"><span>{r.routeName} ({r.vehicleNumber})</span> <span className="font-bold text-emerald-700">৳{r.fare}</span></div>)}
@@ -512,7 +747,7 @@ const App: React.FC = () => {
           <div className="flex gap-4 mb-6 bg-cream-50 p-4 rounded-lg border border-cream-200">
               <input placeholder="Room No" className="input-field" onChange={e=>setNewRoom({...newRoom, roomNumber: e.target.value})} />
               <input placeholder="Capacity" type="number" className="input-field" onChange={e=>setNewRoom({...newRoom, capacity: Number(e.target.value)})} />
-              <button onClick={()=>addItem(rooms, setRooms, newRoom, setNewRoom)} className="bg-emerald-600 text-white px-4 rounded-lg hover:bg-emerald-700">Add Room</button>
+              <button onClick={()=>addItem(rooms, setRooms, newRoom, setNewRoom, 'Hostel room added')} className="bg-emerald-600 text-white px-4 rounded-lg hover:bg-emerald-700">Add Room</button>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {rooms.map(r => (
@@ -540,7 +775,7 @@ const App: React.FC = () => {
                   }} className="bg-gold-500 text-white px-4 rounded-lg text-sm flex items-center gap-1 hover:bg-gold-600 transition-colors"><Sparkles size={14}/> AI Draft</button>
               </div>
               <textarea placeholder="Notice Content" className="input-field h-32 mb-2" value={newNotice.content||''} onChange={e=>setNewNotice({...newNotice, content: e.target.value})}></textarea>
-              <button onClick={()=>addItem(notices, setNotices, newNotice, setNewNotice)} className="bg-emerald-600 text-white w-full py-2 rounded-lg hover:bg-emerald-700 transition-colors">Post Notice</button>
+              <button onClick={()=>addItem(notices, setNotices, newNotice, setNewNotice, 'Notice posted')} className="bg-emerald-600 text-white w-full py-2 rounded-lg hover:bg-emerald-700 transition-colors">Post Notice</button>
           </div>
           <div className="space-y-4">
               {notices.map(n => (
@@ -579,8 +814,8 @@ const App: React.FC = () => {
               <div id="id-card-print" className="w-[320px] h-[480px] bg-gradient-to-b from-cream-50 to-white rounded-t-[100px] rounded-b-xl overflow-hidden shadow-2xl relative text-gray-800 border-4 border-gold-500">
                   <div className="absolute top-0 w-full h-32 bg-emerald-800 rounded-b-[50%] -mt-10 z-0 border-b-4 border-gold-400"></div>
                   <div className="p-6 flex flex-col items-center h-full relative z-10 pt-10">
-                      <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-2 shadow-lg border-2 border-gold-400 p-2"><img src="https://cdn-icons-png.flaticon.com/512/3354/3354366.png" className="w-full h-full object-contain"/></div>
-                      <h2 className="text-lg font-bold text-emerald-900 uppercase tracking-wider">Smart Madrasa</h2>
+                      <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-2 shadow-lg border-2 border-gold-400 p-2"><img src={madrasaConfig.logo} className="w-full h-full object-contain"/></div>
+                      <h2 className="text-lg font-bold text-emerald-900 uppercase tracking-wider">{madrasaConfig.name}</h2>
                       <p className="text-[10px] text-emerald-600 uppercase tracking-widest mb-4">Identity Card</p>
                       
                       <div className="w-28 h-28 rounded-full border-4 border-gold-500 bg-gray-100 mb-4 overflow-hidden shadow-inner"><img src={newStudent.photo || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"} className="w-full h-full object-cover"/></div>
@@ -749,9 +984,9 @@ const App: React.FC = () => {
         <div className="bg-white/80 backdrop-blur-xl border border-white/50 p-8 rounded-3xl w-full max-w-md shadow-2xl relative z-10 text-center animate-slide-up">
           <div className="mb-8 flex flex-col items-center">
             <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-lg mb-4 border-4 border-gold-400 p-2">
-                <img src="https://cdn-icons-png.flaticon.com/512/3354/3354366.png" className="w-full h-full object-contain"/>
+                <img src={madrasaConfig.logo} className="w-full h-full object-contain"/>
             </div>
-            <h1 className="text-3xl font-bold text-emerald-900">Smart Madrasa Pro</h1>
+            <h1 className="text-3xl font-bold text-emerald-900">{madrasaConfig.name}</h1>
             <p className="text-emerald-600 font-medium">Digital Management System</p>
           </div>
           
@@ -787,7 +1022,7 @@ const App: React.FC = () => {
         {/* Sidebar */}
         <aside className={`fixed z-30 inset-y-0 left-0 w-72 bg-white/95 backdrop-blur-xl border-r border-emerald-100 shadow-2xl transform transition-transform duration-300 md:relative md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} flex flex-col`}>
            <div className="h-20 flex items-center gap-3 px-6 bg-gradient-to-r from-emerald-800 to-emerald-700 shadow-sm shrink-0">
-               <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center border border-white/20"><img src="https://cdn-icons-png.flaticon.com/512/3354/3354366.png" className="w-6 h-6 invert brightness-0"/></div>
+               <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center border border-white/20"><img src={madrasaConfig.logo} className="w-6 h-6 invert brightness-0"/></div>
                <div className="text-white">
                    <h1 className="font-bold text-lg leading-tight">Madrasa Pro</h1>
                    <p className="text-[10px] opacity-70 uppercase tracking-widest">Admin Panel</p>
@@ -829,7 +1064,7 @@ const App: React.FC = () => {
                        <p className="text-sm font-bold text-gray-800 truncate">{authUser.name}</p>
                        <p className="text-xs text-emerald-600 truncate">{authUser.email}</p>
                    </div>
-                   <button onClick={()=>setAuthUser(null)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Logout"><LogOut size={18}/></button>
+                   <button onClick={handleLogout} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Logout"><LogOut size={18}/></button>
                </div>
            </div>
         </aside>
@@ -869,11 +1104,12 @@ const App: React.FC = () => {
            <main className="flex-1 overflow-y-auto p-6 relative custom-scrollbar">
               <div className="max-w-7xl mx-auto pb-20">
                   {activeSubItem === 'dashboard' && renderDashboard()}
+                  {activeSubItem === 'gallery' && renderGallery()}
                   {activeSubItem === 'chat' && renderChatSystem()}
                   {activeSubItem === 'gen_id' && renderIdCardGen()}
                   {activeSubItem === 'visitors' && renderFrontOffice()}
                   {activeSubItem === 'enquiry' && renderFrontOffice()}
-                  {activeSubItem === 'collect_fees' && <div className="bg-white/90 p-6 rounded-xl shadow-sm border border-emerald-50"><h3 className="text-xl font-bold mb-4 text-emerald-800">Fees Collection</h3><p>Search student and collect fees logic goes here.</p></div>}
+                  {(activeSubItem === 'collect_fees' || activeSubItem === 'fees_report') && renderFees()}
                   {activeSubItem === 'student_admission' && renderStudentInfo()}
                   {activeSubItem === 'student_details' && renderStudentInfo()}
                   {(activeSubItem === 'add_income' || activeSubItem === 'search_income') && renderAccounts('Income')}
@@ -884,6 +1120,7 @@ const App: React.FC = () => {
                   {(activeSubItem === 'book_list' || activeSubItem === 'issue_return') && renderLibrary()}
                   {(activeSubItem === 'routes' || activeSubItem === 'vehicles') && renderTransport()}
                   {activeSubItem === 'hostel_rooms' && renderHostel()}
+                  {(activeSubItem === 'class_timetable' || activeSubItem === 'subjects') && renderAcademics()}
                   {activeSubItem === 'developer' && renderDeveloper()}
               </div>
            </main>

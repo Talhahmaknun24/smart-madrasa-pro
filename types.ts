@@ -19,6 +19,29 @@ export interface Student {
   category: string;
 }
 
+export interface MadrasaConfig {
+  name: string;
+  address: string;
+  logo: string;
+  banner: string;
+  established: string;
+}
+
+export interface GalleryItem {
+  id: string;
+  url: string;
+  caption: string;
+  date: string;
+}
+
+export interface ActivityLog {
+  id: string;
+  action: string;
+  details: string;
+  timestamp: string;
+  user: string;
+}
+
 export interface UserProfile {
   name: string;
   role: string;
@@ -91,6 +114,7 @@ export interface FeeRecord {
   status: 'Paid' | 'Due';
   date: string;
   invoiceNo: string;
+  paymentMethod: string;
 }
 
 export interface LibraryBook {
@@ -147,34 +171,42 @@ export interface HostelRoom {
   costPerBed: number;
 }
 
+export interface Subject {
+  id: string;
+  name: string;
+  code: string;
+  type: 'Theory' | 'Practical';
+}
+
+export interface TimeTable {
+  id: string;
+  day: string;
+  class: string;
+  subject: string;
+  teacher: string;
+  startTime: string;
+  endTime: string;
+}
+
 export type Language = 'en' | 'bn';
 
-// Main Categories based on provided HTML
+// Main Categories
 export enum Module {
   DASHBOARD = 'Dashboard',
+  GALLERY = 'Gallery',
   FRONT_OFFICE = 'Front Office',
   STUDENT_INFO = 'Student Information',
   FEES_COLLECTION = 'Fees Collection',
   INCOME = 'Income',
   EXPENSES = 'Expenses',
   EXAMINATIONS = 'Examinations',
-  ATTENDANCE = 'Attendance',
-  ONLINE_EXAM = 'Online Exam',
   ACADEMICS = 'Academics',
-  LESSON_PLAN = 'Lesson Plan',
   HUMAN_RESOURCE = 'Human Resource',
   COMMUNICATE = 'Communicate',
-  DOWNLOAD_CENTER = 'Download Center',
-  HOMEWORK = 'Homework',
+  CERTIFICATE = 'Certificate',
   LIBRARY = 'Library',
-  INVENTORY = 'Inventory',
   TRANSPORT = 'Transport',
   HOSTEL = 'Hostel',
-  CERTIFICATE = 'Certificate',
-  FRONT_CMS = 'Front CMS',
-  ALUMNI = 'Alumni',
-  REPORTS = 'Reports',
-  SYSTEM_SETTINGS = 'System Settings',
   DEVELOPER_INFO = 'Developer Info'
 }
 
