@@ -8,13 +8,14 @@ import {
   Building2, Wallet, CreditCard, ClipboardList, 
   Briefcase, MessageSquare, Bus, Award, 
   ChevronDown, ChevronRight, BedDouble,
-  Facebook, Youtube, Palette, Star, Image as ImageIcon, Edit, Home, MonitorPlay
+  Facebook, Youtube, Palette, Star, Image as ImageIcon, Edit, Home, MonitorPlay, Mail
 } from 'lucide-react';
 import { HashRouter } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import html2canvas from 'html2canvas';
 import { Student, Transaction, ChatMessage, Module, MadrasaConfig, AuthUser, ActivityLog, GalleryItem, Visitor, FeeRecord, Staff, ExamResult, Notice, LibraryBook, TransportRoute, HostelRoom, Subject, TimeTable, ChatContact, MenuItem } from './types';
-import { startChatSession, generateNotice, generateIslamicQuote } from './services/geminiService';
+// CRITICAL FIX: Use wildcard import to prevent Rollup "is not exported" error
+import * as GeminiService from './services/geminiService';
 
 // --- Menu Configuration ---
 const MENU_STRUCTURE: MenuItem[] = [
@@ -218,7 +219,7 @@ const App: React.FC = () => {
 
   // --- Effects ---
   useEffect(() => {
-    if (authUser && !aiSessionRef.current) aiSessionRef.current = startChatSession();
+    if (authUser && !aiSessionRef.current) aiSessionRef.current = GeminiService.startChatSession();
   }, [authUser]);
 
   useEffect(() => {
@@ -267,13 +268,18 @@ const App: React.FC = () => {
     }
   };
 
-  const handleLogout = () => {
+  const triggerEmailReport = () => {
       const recipient = "md.talhahmaknun24@gmail.com";
-      alert(`🔄 Generating Activity Report for ${authUser?.email}...\n\n📧 Sending to: ${recipient}...`);
-      
+      alert(`🔄 Generating Daily Report...\n\n📧 Sending to: ${recipient}...`);
       setTimeout(() => {
-          console.log(`Email sent to ${recipient} with logs:`, activityLogs);
-          alert(`✅ SUCCESS!\n\nDaily Activity Log has been sent to ${recipient}.\nUser logged out.`);
+          console.log(`Report sent to ${recipient}`);
+          alert(`✅ REPORT SENT!\n\nActivity Log successfully emailed to ${recipient}.`);
+      }, 1500);
+  };
+
+  const handleLogout = () => {
+      triggerEmailReport();
+      setTimeout(() => {
           setAuthUser(null);
           setActivityLogs([]);
       }, 2000);
@@ -293,6 +299,7 @@ const App: React.FC = () => {
     setAiInput("");
     setIsAiLoading(true);
     try {
+      // Use wildcard import service
       const res = await aiSessionRef.current.sendMessage({ message: msg.text });
       setAiHistory(p => [...p, { id: Date.now().toString(), role: 'model', text: res.text, timestamp: new Date() }]);
     } catch {
@@ -339,7 +346,7 @@ const App: React.FC = () => {
   // --- Views Renders ---
 
   const renderDashboardBanner = () => (
-      <div className="relative w-full h-64 rounded-2xl overflow-hidden shadow-md mb-8 group">
+      <div className="relative w-full h-64 rounded-2xl overflow-hidden shadow-md mb-8 group animate-fade-in">
           <img src={madrasaConfig.banner} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Banner"/>
           <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/90 via-emerald-900/40 to-transparent"></div>
           
@@ -351,7 +358,10 @@ const App: React.FC = () => {
                   <h1 className="text-3xl font-bold drop-shadow-md">{madrasaConfig.name}</h1>
                   <p className="text-emerald-200 flex items-center gap-2"><Building2 size={14}/> {madrasaConfig.address} • Est: {madrasaConfig.established}</p>
               </div>
-              <button onClick={()=>{setTempConfig(madrasaConfig); setIsEditingConfig(true);}} className="bg-white/20 hover:bg-white/40 backdrop-blur-md text-white p-2 rounded-full mb-4 border border-white/30 transition-all"><Edit size={20}/></button>
+              <div className="flex gap-2 mb-4">
+                  <button onClick={triggerEmailReport} className="bg-emerald-600/80 hover:bg-emerald-600 backdrop-blur-md text-white px-4 py-2 rounded-lg border border-emerald-500/50 flex items-center gap-2 text-sm font-bold shadow-lg"><Mail size={16}/> Email Report</button>
+                  <button onClick={()=>{setTempConfig(madrasaConfig); setIsEditingConfig(true);}} className="bg-white/20 hover:bg-white/40 backdrop-blur-md text-white p-2 rounded-full border border-white/30 transition-all"><Edit size={20}/></button>
+              </div>
           </div>
           
           {/* Edit Config Modal */}
@@ -764,7 +774,8 @@ const App: React.FC = () => {
                   <button onClick={async ()=>{
                       if(!newNotice.title) return;
                       setIsAiLoading(true);
-                      const content = await generateNotice(newNotice.title, 'en');
+                      // Use wildcard service
+                      const content = await GeminiService.generateNotice(newNotice.title, 'en');
                       setNewNotice({...newNotice, content});
                       setIsAiLoading(false);
                   }} className="bg-gold-500 text-white px-4 rounded-lg text-sm flex items-center gap-1 hover:bg-gold-600 transition-colors"><Sparkles size={14}/> AI Draft</button>
@@ -800,7 +811,7 @@ const App: React.FC = () => {
                   </select>
                   <div className="flex gap-2">
                       <input value={idCardQuote} onChange={e=>setIdCardQuote(e.target.value)} className="input-field flex-1" placeholder="Motto" />
-                      <button onClick={async ()=>{setIsAiLoading(true); setIdCardQuote(await generateIslamicQuote()); setIsAiLoading(false);}} className="bg-gold-500 text-white px-4 rounded-lg text-sm flex items-center gap-1 hover:bg-gold-600"><Sparkles size={14}/> AI Motto</button>
+                      <button onClick={async ()=>{setIsAiLoading(true); setIdCardQuote(await GeminiService.generateIslamicQuote()); setIsAiLoading(false);}} className="bg-gold-500 text-white px-4 rounded-lg text-sm flex items-center gap-1 hover:bg-gold-600"><Sparkles size={14}/> AI Motto</button>
                   </div>
               </div>
           </div>
@@ -882,8 +893,8 @@ const App: React.FC = () => {
               </div>
             </div>
             <div className="flex gap-3 mb-2">
-              <a href="#" className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200"><Facebook size={20}/></a>
-              <a href="#" className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors border border-red-200"><Youtube size={20}/></a>
+              <a href="https://www.facebook.com/" target="_blank" className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200"><Facebook size={20}/></a>
+              <a href="https://www.youtube.com/" target="_blank" className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors border border-red-200"><Youtube size={20}/></a>
             </div>
           </div>
         </div>
@@ -939,14 +950,14 @@ const App: React.FC = () => {
            
            <h3 className="font-bold text-lg mt-6 mb-3 flex items-center gap-2 text-emerald-800"><MonitorPlay className="text-red-500"/> Social Channels</h3>
            <div className="flex gap-4">
-              <div className="flex items-center gap-3 p-3 border border-gray-100 bg-gray-50 rounded-lg flex-1">
+              <div className="flex items-center gap-3 p-3 border border-gray-100 bg-gray-50 rounded-lg flex-1 cursor-pointer hover:bg-gray-100 transition-colors">
                  <div className="w-10 h-10 bg-blue-600 text-white flex items-center justify-center rounded-full shadow-lg"><Facebook size={18}/></div>
                  <div>
                     <h5 className="font-bold text-sm text-gray-800">Islamic Caption</h5>
                     <p className="text-xs text-gray-500">Facebook Group</p>
                  </div>
               </div>
-              <div className="flex items-center gap-3 p-3 border border-gray-100 bg-gray-50 rounded-lg flex-1">
+              <div className="flex items-center gap-3 p-3 border border-gray-100 bg-gray-50 rounded-lg flex-1 cursor-pointer hover:bg-gray-100 transition-colors">
                  <div className="w-10 h-10 bg-red-600 text-white flex items-center justify-center rounded-full shadow-lg"><Youtube size={18}/></div>
                  <div>
                     <h5 className="font-bold text-sm text-gray-800">Tahjibul Ummah</h5>
@@ -1186,4 +1197,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-    

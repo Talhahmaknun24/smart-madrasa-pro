@@ -6,7 +6,8 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   define: {
-    'process.env.API_KEY': JSON.stringify(process.env.API_KEY || "")
+    // Prevent crashes if process.env is undefined in browser
+    'process.env': {} 
   },
   resolve: {
     alias: {
@@ -15,10 +16,17 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
+    emptyOutDir: true,
     sourcemap: false,
-    chunkSizeWarningLimit: 3000,
+    rollupOptions: {
+      onwarn(warning, warn) {
+        if (warning.code === 'MODULE_LEVEL_DIRECTIVE') return;
+        warn(warning);
+      }
+    },
+    // Reduce strictness to allow build to pass with warnings
     commonjsOptions: {
-      transformMixedEsModules: true,
-    }
+      ignoreTryCatch: false,
+    },
   }
 })
