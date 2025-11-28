@@ -1,20 +1,20 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  LayoutDashboard, Users, GraduationCap, Calculator, FileText, 
-  Bot, Menu, X, Search, Plus, Trash2, Printer, 
-  Send, Sparkles, BookOpen, Settings, Bell, Globe, User, 
-  Library, ScrollText, PenTool, LogOut, Info, ShieldCheck, Download, Camera,
-  Building2, Wallet, CreditCard, ClipboardList, CheckSquare, MonitorPlay,
-  Briefcase, MessageSquare, DownloadCloud, Home, Bus, Award, LayoutTemplate,
-  PieChart, ChevronDown, ChevronRight, Calendar, CheckCircle, BedDouble, Truck,
-  Facebook, Youtube, Palette, Code, Star, Image as ImageIcon, Edit, Save, Mail
+  LayoutDashboard, Users, GraduationCap, Calculator, 
+  Bot, Menu, X, Plus, Printer, 
+  Send, Sparkles, Bell, User, 
+  Library, LogOut, Download, Camera,
+  Building2, Wallet, CreditCard, ClipboardList, 
+  Briefcase, MessageSquare, Bus, Award, 
+  ChevronDown, ChevronRight, BedDouble,
+  Facebook, Youtube, Palette, Star, Image as ImageIcon, Edit, Home, MonitorPlay
 } from 'lucide-react';
 import { HashRouter } from 'react-router-dom';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line, PieChart as RePie, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import html2canvas from 'html2canvas';
-import { Student, Transaction, ChatMessage, Module, Language, UserProfile, AuthUser, LoginLog, ChatContact, MenuItem, Visitor, FeeRecord, LibraryBook, Staff, ExamResult, Notice, TransportRoute, HostelRoom, MadrasaConfig, GalleryItem, ActivityLog, Subject, TimeTable } from './types';
-import { startChatSession, generateQuestionPaper, generateIslamicQuote, generateNotice } from './services/geminiService';
+import { Student, Transaction, ChatMessage, Module, MadrasaConfig, AuthUser, ActivityLog, GalleryItem, Visitor, FeeRecord, Staff, ExamResult, Notice, LibraryBook, TransportRoute, HostelRoom, Subject, TimeTable, ChatContact, MenuItem } from './types';
+import { startChatSession, generateNotice, generateIslamicQuote } from './services/geminiService';
 
 // --- Menu Configuration ---
 const MENU_STRUCTURE: MenuItem[] = [
@@ -144,8 +144,6 @@ const App: React.FC = () => {
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([
       { id: '1', url: 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?q=80&w=2070', caption: 'Annual Sports Day', date: '2024-02-10' }
   ]);
-  const [newGalleryItem, setNewGalleryItem] = useState<Partial<GalleryItem>>({});
-
   const [students, setStudents] = useState<Student[]>([
       { id: '1', regNo: '2024001', name: 'Abdullah', class: 'One', roll: '1', phone: '017000000', fatherName: 'Abul Kalam', motherName: 'Fatima', address: 'Dhaka', dob: '2015-01-01', bloodGroup: 'O+', birthRegNo: '123456', admissionDate: '2024-01-01', gender: 'Male', religion: 'Islam', category: 'Regular' }
   ]);
@@ -270,10 +268,7 @@ const App: React.FC = () => {
   };
 
   const handleLogout = () => {
-      // Simulate sending email
       const recipient = "md.talhahmaknun24@gmail.com";
-      const subject = `Daily Activity Log - ${new Date().toLocaleDateString()}`;
-      
       alert(`🔄 Generating Activity Report for ${authUser?.email}...\n\n📧 Sending to: ${recipient}...`);
       
       setTimeout(() => {
@@ -1191,3 +1186,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+    
