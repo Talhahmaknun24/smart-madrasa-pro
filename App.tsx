@@ -311,7 +311,7 @@ const App: React.FC = () => {
                       <div className="w-full h-full bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 font-bold text-2xl">TM</div>
                    </div>
                    <div className="mt-16">
-                      <h2 className="text-2xl font-bold text-gray-800">Muha: Twalha Maknun</h2>
+                      <h2 className="text-2xl font-bold text-gray-800">Muhammad: Talhah Maknun</h2>
                       <p className="text-emerald-600 font-medium">Professional Graphic Designer & Developer</p>
                       
                       <div className="mt-6 space-y-4">
