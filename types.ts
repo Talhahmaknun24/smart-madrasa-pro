@@ -1,6 +1,6 @@
 
 export interface Student {
-  id: string;
+  id?: string;
   regNo: string;
   name: string;
   fatherName: string;
@@ -28,46 +28,30 @@ export interface MadrasaConfig {
 }
 
 export interface GalleryItem {
-  id: string;
+  id?: string;
   url: string;
   caption: string;
   date: string;
 }
 
 export interface ActivityLog {
-  id: string;
+  id?: string;
   action: string;
   details: string;
   timestamp: string;
   user: string;
 }
 
-export interface UserProfile {
-  name: string;
-  role: string;
-  madrasaName: string;
-  email: string;
-  phone: string;
-  address: string;
-  established: string;
-}
-
 export interface AuthUser {
+  uid: string;
   email: string;
   name: string;
-  isVerified: boolean;
-  loginTime: string;
-}
-
-export interface LoginLog {
-  id: string;
-  email: string;
-  timestamp: string;
-  device: string;
+  photoURL?: string;
+  role: 'admin' | 'user' | 'super_admin';
 }
 
 export interface Transaction {
-  id: string;
+  id?: string;
   date: string;
   title: string;
   type: 'Income' | 'Expense';
@@ -78,25 +62,16 @@ export interface Transaction {
 }
 
 export interface ChatMessage {
-  id: string;
-  role: 'user' | 'model' | 'contact';
+  id?: string;
   text: string;
-  timestamp: Date;
-  senderName?: string;
-}
-
-export interface ChatContact {
-  id: string;
-  name: string;
-  role: string; // Student, Staff, Admin
-  avatar: string;
-  status: 'online' | 'offline' | 'busy';
-  lastMessage: string;
-  unreadCount: number;
+  senderId: string;
+  senderName: string;
+  timestamp: any; // Firestore Timestamp
+  type: 'user' | 'system';
 }
 
 export interface Visitor {
-  id: string;
+  id?: string;
   name: string;
   phone: string;
   purpose: string;
@@ -106,7 +81,7 @@ export interface Visitor {
 }
 
 export interface FeeRecord {
-  id: string;
+  id?: string;
   studentName: string;
   regNo: string;
   amount: number;
@@ -118,7 +93,7 @@ export interface FeeRecord {
 }
 
 export interface LibraryBook {
-  id: string;
+  id?: string;
   title: string;
   author: string;
   isbn: string;
@@ -127,7 +102,7 @@ export interface LibraryBook {
 }
 
 export interface Staff {
-  id: string;
+  id?: string;
   name: string;
   designation: string;
   phone: string;
@@ -138,7 +113,7 @@ export interface Staff {
 }
 
 export interface ExamResult {
-  id: string;
+  id?: string;
   examName: string;
   studentName: string;
   regNo: string;
@@ -148,7 +123,7 @@ export interface ExamResult {
 }
 
 export interface Notice {
-  id: string;
+  id?: string;
   title: string;
   date: string;
   content: string;
@@ -156,7 +131,7 @@ export interface Notice {
 }
 
 export interface TransportRoute {
-  id: string;
+  id?: string;
   routeName: string;
   vehicleNumber: string;
   driverName: string;
@@ -164,7 +139,7 @@ export interface TransportRoute {
 }
 
 export interface HostelRoom {
-  id: string;
+  id?: string;
   roomNumber: string;
   type: string;
   capacity: number;
@@ -172,14 +147,14 @@ export interface HostelRoom {
 }
 
 export interface Subject {
-  id: string;
+  id?: string;
   name: string;
   code: string;
   type: 'Theory' | 'Practical';
 }
 
 export interface TimeTable {
-  id: string;
+  id?: string;
   day: string;
   class: string;
   subject: string;
