@@ -1,22 +1,93 @@
 
 export interface Student {
   id?: string;
+  // Personal Info
   regNo: string;
   name: string;
-  fatherName: string;
-  motherName: string;
-  class: string;
-  roll: string;
-  phone: string;
-  address: string;
   dob: string;
-  bloodGroup: string;
-  birthRegNo: string;
-  photo?: string;
-  admissionDate: string;
   gender: 'Male' | 'Female';
+  bloodGroup: string;
   religion: string;
-  category: string;
+  mobile: string;
+  email?: string;
+  birthRegNo?: string;
+  category?: string;
+  
+  // Guardian Info
+  fatherName: string;
+  fatherPhone: string;
+  fatherOccupation?: string;
+  motherName: string;
+  motherPhone?: string;
+  guardianNid?: string;
+  
+  // Academic Info
+  class: string;
+  section?: string;
+  roll: string;
+  admissionDate: string;
+  previousSchool?: string;
+  
+  // Address
+  presentAddress: string;
+  permanentAddress: string;
+}
+
+export interface FeeInvoice {
+  id?: string;
+  invoiceNo: string;
+  studentId: string;
+  studentName: string;
+  class: string;
+  title: string;
+  amount: number;
+  paid: number;
+  status: 'Paid' | 'Unpaid' | 'Partial';
+  date: string;
+  paymentMethod: string;
+}
+
+export interface LibraryBook {
+  id?: string;
+  title: string;
+  author: string;
+  isbn: string;
+  publisher?: string;
+  rackNo?: string;
+  quantity: number;
+  available: number;
+}
+
+export interface Transaction {
+  id?: string;
+  date: string;
+  title: string;
+  type: 'Income' | 'Expense';
+  amount: number;
+  description?: string;
+}
+
+export interface Notice {
+  id?: string;
+  title: string;
+  date: string;
+  content: string;
+  postedBy: string;
+}
+
+export interface ChatMessage {
+  id?: string;
+  text: string;
+  senderId: string;
+  senderName: string;
+  timestamp: any;
+}
+
+export interface AuthUser {
+  uid: string;
+  email: string;
+  name: string;
+  role: string;
 }
 
 export interface MadrasaConfig {
@@ -27,168 +98,18 @@ export interface MadrasaConfig {
   established: string;
 }
 
-export interface GalleryItem {
-  id?: string;
-  url: string;
-  caption: string;
-  date: string;
-}
-
-export interface ActivityLog {
-  id?: string;
-  action: string;
-  details: string;
-  timestamp: string;
-  user: string;
-}
-
-export interface AuthUser {
-  uid: string;
-  email: string;
-  name: string;
-  photoURL?: string;
-  role: 'admin' | 'user' | 'super_admin';
-}
-
-export interface Transaction {
-  id?: string;
-  date: string;
-  title: string;
-  type: 'Income' | 'Expense';
-  category: string;
-  amount: number;
-  description: string;
-  paymentMethod: string;
-}
-
-export interface ChatMessage {
-  id?: string;
-  text: string;
-  senderId: string;
-  senderName: string;
-  timestamp: any; // Firestore Timestamp
-  type: 'user' | 'system';
-}
-
-export interface Visitor {
-  id?: string;
-  name: string;
-  phone: string;
-  purpose: string;
-  inTime: string;
-  outTime: string;
-  date: string;
-}
-
-export interface FeeRecord {
-  id?: string;
-  studentName: string;
-  regNo: string;
-  amount: number;
-  type: string;
-  status: 'Paid' | 'Due';
-  date: string;
-  invoiceNo: string;
-  paymentMethod: string;
-}
-
-export interface LibraryBook {
-  id?: string;
-  title: string;
-  author: string;
-  isbn: string;
-  status: 'Available' | 'Issued';
-  rackNo: string;
-}
-
-export interface Staff {
-  id?: string;
-  name: string;
-  designation: string;
-  phone: string;
-  email: string;
-  joiningDate: string;
-  salary: number;
-  photo?: string;
-}
-
-export interface ExamResult {
-  id?: string;
-  examName: string;
-  studentName: string;
-  regNo: string;
-  subject: string;
-  marks: number;
-  grade: string;
-}
-
-export interface Notice {
-  id?: string;
-  title: string;
-  date: string;
-  content: string;
-  audience: 'All' | 'Student' | 'Staff';
-}
-
-export interface TransportRoute {
-  id?: string;
-  routeName: string;
-  vehicleNumber: string;
-  driverName: string;
-  fare: number;
-}
-
-export interface HostelRoom {
-  id?: string;
-  roomNumber: string;
-  type: string;
-  capacity: number;
-  costPerBed: number;
-}
-
-export interface Subject {
-  id?: string;
-  name: string;
-  code: string;
-  type: 'Theory' | 'Practical';
-}
-
-export interface TimeTable {
-  id?: string;
-  day: string;
-  class: string;
-  subject: string;
-  teacher: string;
-  startTime: string;
-  endTime: string;
-}
-
-export type Language = 'en' | 'bn';
-
-// Main Categories
+// Menu Modules
 export enum Module {
   DASHBOARD = 'Dashboard',
-  GALLERY = 'Gallery',
-  FRONT_OFFICE = 'Front Office',
-  STUDENT_INFO = 'Student Information',
-  FEES_COLLECTION = 'Fees Collection',
-  INCOME = 'Income',
-  EXPENSES = 'Expenses',
-  EXAMINATIONS = 'Examinations',
+  STUDENT_ADMISSION = 'Student Admission',
+  STUDENT_LIST = 'Student List',
+  FEES_INVOICE = 'Fees Invoice',
+  FEES_LIST = 'Fees History',
   ACADEMICS = 'Academics',
-  HUMAN_RESOURCE = 'Human Resource',
-  COMMUNICATE = 'Communicate',
-  CERTIFICATE = 'Certificate',
   LIBRARY = 'Library',
   TRANSPORT = 'Transport',
   HOSTEL = 'Hostel',
-  DEVELOPER_INFO = 'Developer Info'
-}
-
-export interface MenuItem {
-  id: string;
-  label: string;
-  module: Module;
-  icon?: any; // Lucide Icon
-  subItems?: { id: string; label: string }[];
+  COMMUNICATE = 'Communicate',
+  DEVELOPER = 'Developer Info',
+  SETTINGS = 'Settings'
 }
